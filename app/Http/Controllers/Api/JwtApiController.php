@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use http\Env\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class JwtApiController extends Controller
 {
@@ -17,12 +19,15 @@ class JwtApiController extends Controller
 
     public function register(Request $request): \Illuminate\Http\JsonResponse
     {
-        $request->validate([
+      $data = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:3',
         ]);
 
+      if($data->fails()) {
+        return  response()->json(['error' => 'Check inputs or user email exists'], 401);
+      }
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -43,10 +48,14 @@ class JwtApiController extends Controller
 
     public function login(Request $request): \Illuminate\Http\JsonResponse
     {
-        $request->validate([
+      $data =  Validator::make($request->all(),[
             'email' => 'required|string|email',
             'password' => 'required|string',
         ]);
+      if ($data->fails())
+      {
+          return  response()->json(['error' => 'Check inputs'], 401);
+      }
         $credentials = $request->only('email', 'password');
 
         $token = Auth::guard('api')->attempt($credentials);
